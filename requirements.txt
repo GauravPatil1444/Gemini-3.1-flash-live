@@ -3,3 +3,9 @@ pyaudio
 opencv-python
 pillow
 mss
+dot-env
+fastapi
+uvicorn
+websocket
+python-multipart
+streamlit_webrtc

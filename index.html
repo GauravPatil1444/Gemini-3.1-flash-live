@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h2>🎤 Voice AI</h2>
+  <button onclick="start()">Start</button>
+
+  <script>
+    let ws;
+    let audioContext;
+    let processor;
+    let input;
+
+    async function start() {
+      ws = new WebSocket("ws://localhost:8000/ws/audio");
+
+      ws.onopen = async () => {
+        console.log("Connected");
+
+        audioContext = new AudioContext({ sampleRate: 16000 });
+
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        input = audioContext.createMediaStreamSource(stream);
+
+        processor = audioContext.createScriptProcessor(1024, 1, 1);
+
+        input.connect(processor);
+        processor.connect(audioContext.destination);
+
+        processor.onaudioprocess = (e) => {
+          const floatData = e.inputBuffer.getChannelData(0);
+          const int16Data = convertFloat32ToInt16(floatData);
+          ws.send(int16Data);
+        };
+      };
+
+      ws.onmessage = async (event) => {
+        if (typeof event.data === "string") {
+          const msg = JSON.parse(event.data);
+          console.log(msg.role + ":", msg.text);
+        } else {
+          // 🔊 Play audio
+          const arrayBuffer = await event.data.arrayBuffer();
+          playAudio(arrayBuffer);
+        }
+      };
+    }
+
+    function convertFloat32ToInt16(buffer) {
+      let l = buffer.length;
+      let buf = new Int16Array(l);
+      while (l--) {
+        buf[l] = Math.min(1, buffer[l]) * 0x7fff;
+      }
+      return buf.buffer;
+    }
+
+    function playAudio(buffer) {
+      const audioCtx = new AudioContext({ sampleRate: 24000 });
+      audioCtx.decodeAudioData(buffer, (decoded) => {
+        const source = audioCtx.createBufferSource();
+        source.buffer = decoded;
+        source.connect(audioCtx.destination);
+        source.start(0);
+      });
+    }
+  </script>
+</body>
+</html>

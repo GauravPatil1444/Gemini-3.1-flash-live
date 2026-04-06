@@ -2,8 +2,17 @@ import asyncio
 from google import genai
 import pyaudio
 from google.genai import types
-client = genai.Client(api_key="AIzaSyD8vwPrOfAzI3HIC_dlwRcAQuTxBK2rheY")
+from dotenv import load_dotenv
+import os
+# Load .env file
+load_dotenv()
 
+# Get API key
+api_key = os.getenv("GEMINI_API_KEY")
+
+
+# 🔐 API key
+client = genai.Client(api_key=api_key)
 # --- pyaudio config ---
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
